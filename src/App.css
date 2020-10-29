@@ -53,6 +53,10 @@
   align-items: center;
 }
 
+.room-table td:last-child .tag {
+  cursor: pointer;
+}
+
 .room-table thead th {
   color: blanchedalmond;
   font-size: large;
