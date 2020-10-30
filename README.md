@@ -1,3 +1,13 @@
+## Instructions to run locally -
+
+- Clone/copy the project; Unzip if it is zipped source-code;
+- From inside the project's directory run - `yarn install` or simply `yarn`
+- Run proxy-url - `yarn start-proxy`
+- Run the project - `yarn start`
+- Head to `http://localhost:3000` for using the web-ui.
+
+---
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

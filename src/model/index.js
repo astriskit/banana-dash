@@ -33,7 +33,7 @@ const init = {
   invoices: { ...initRecord },
   invoiceables: { ...initRecord },
   payments: { ...initRecord },
-  logger: true,
+  logger: false,
 };
 
 const nullFn = () => null;
