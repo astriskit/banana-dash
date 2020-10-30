@@ -2,8 +2,10 @@
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
+  align-items: center;
   height: 100vh;
 }
+
 .alert.error {
   color: red;
   text-align: center;
@@ -11,6 +13,7 @@
   padding: 10px;
   margin: 10px;
   font-weight: bold;
+  min-width: 60%;
 }
 
 .center {
@@ -19,20 +22,22 @@
 
 .table-container {
   max-height: 80vh;
+  width: 80vw;
   overflow: auto;
   display: flex;
   justify-content: center;
 }
 
 .room-table {
-  width: 80%;
-  border-radius: 6px;
+  width: 100%;
 }
+
 .room-table td,
 .room-table th {
   padding: 10px;
   border-radius: 6px;
 }
+
 .room-table td:first-child,
 .room-table th:first-child {
   border-top-right-radius: unset;
@@ -87,4 +92,38 @@
 
 .tag:only-child {
   margin-right: unset;
+}
+
+.filter-date {
+  width: 70%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-date > * {
+  margin: 5px 0px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.filter-guest {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.filter-guest > :first-child {
+  margin-right: 15px;
+}
+.filter-guest > :last-child {
+  color: red;
+  border-color: red;
+  font-weight: normal;
+}
+.filter-guest > :last-child:hover,
+.filter-guest > :last-child:focus {
+  background-color: coral;
+  color: bisque;
 }

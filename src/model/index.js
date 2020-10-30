@@ -1,6 +1,26 @@
 import { createContext, useReducer } from "react";
 import { reducer } from "./reducer";
 
+export const allRooms = [
+  "101",
+  "102",
+  "103",
+  "104",
+  "105",
+  "106",
+  "107",
+  "108",
+  "201",
+  "202",
+  "203",
+  "204",
+  "205",
+  "206",
+  "207",
+  "208",
+  "banquet",
+];
+
 const initRecord = {
   loading: false,
   data: [],

@@ -44,12 +44,14 @@ export const loadRooms = async (dispatch) => {
     dispatch(setBookingToLoad());
     const { data } = await listBookings();
     let bookings = [...data];
-    let iter = 0;
-    for (let booking of data) {
-      const { data } = await showBooking(booking.id);
-      bookings[iter] = { ...bookings[iter], ...data };
-      iter += 1;
-    }
+    const indBookings = await Promise.all(
+      data.map(({ id }) => showBooking(id))
+    );
+    bookings = bookings.map((bkng) => {
+      const indBkng =
+        indBookings.find(({ data: { id } }) => id === bkng.id)?.data || {};
+      return { ...bkng, ...indBkng };
+    });
     dispatch(setBookingData(bookings));
     dispatch(setGuestToLoad());
     const { data: guests } = await listGuests();
@@ -63,3 +65,5 @@ export const loadRooms = async (dispatch) => {
       : dispatch(setGuestData([]));
   }
 };
+
+export const loadDues = async (dispatch) => {};

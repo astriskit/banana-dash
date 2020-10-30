@@ -1,35 +1,22 @@
 import React, { useContext, useLayoutEffect, useState } from "react";
 import { Error as ShowError } from "../components/Error";
 import { loadRooms } from "../model/actions";
-import { AppModel } from "../model";
+import { guestsMap, bookingsMap, roomsDict } from "../model/selectors";
+import { AppModel, allRooms } from "../model";
 
-const allRooms = [
-  "101",
-  "102",
-  "103",
-  "104",
-  "105",
-  "106",
-  "107",
-  "108",
-  "201",
-  "202",
-  "203",
-  "204",
-  "205",
-  "206",
-  "207",
-  "208",
-  "banquet",
-];
-
-const RoomStatusTable = ({ rooms = {}, guests = {}, bookings = {} }) => (
+const RoomStatusTable = ({
+  rooms = {},
+  guests = {},
+  bookings = {},
+  onSelectGuest,
+  selectedGuestId,
+}) => (
   <div className="table-container">
     <table className="room-table">
       <thead>
         <tr>
-          <th>Room-id</th>
-          <th>Guests</th>
+          <th width="20%">Room-id</th>
+          {selectedGuestId ? <th>Dues</th> : <th>Guests</th>}
         </tr>
       </thead>
       <tbody>
@@ -38,13 +25,28 @@ const RoomStatusTable = ({ rooms = {}, guests = {}, bookings = {} }) => (
             <td className="center">
               <span className="tag">{room}</span>
             </td>
-            <td>
-              {rooms[room]?.map((booking) => (
-                <span className="tag" key={booking.id}>
-                  {guests.get(bookings.get(booking.booking_id).guest_id).name}
-                </span>
-              )) ?? null}
-            </td>
+            {selectedGuestId ? (
+              <td>--</td>
+            ) : (
+              <td>
+                {rooms[room]?.map((booking) => {
+                  const guest = guests.get(
+                    bookings.get(booking.booking_id).guest_id
+                  );
+                  return (
+                    <span
+                      className="tag"
+                      key={booking.id}
+                      onClick={() => {
+                        onSelectGuest(guest.id);
+                      }}
+                    >
+                      {guest.name}
+                    </span>
+                  );
+                }) ?? null}
+              </td>
+            )}
           </tr>
         ))}
       </tbody>
@@ -54,8 +56,11 @@ const RoomStatusTable = ({ rooms = {}, guests = {}, bookings = {} }) => (
 
 export const Rooms = () => {
   const [state, dispatch] = useContext(AppModel);
-  const [userQuery, setUserQuery] = useState("");
-  const [dateQuery, setDateQuery] = useState({ to: "", from: "" });
+  const [guestQuery, setGuestQuery] = useState("");
+  const [dateQuery, setDateQuery] = useState({
+    to: "",
+    from: "",
+  });
 
   useLayoutEffect(() => {
     loadRooms(dispatch);
@@ -67,28 +72,57 @@ export const Rooms = () => {
   if (loading) return null;
   if (error) return <ShowError error={error} />;
   if (state.bookings.data.length && state.guests.data.length) {
-    let rooms = state.bookings.data
-      .map(({ room_assignments }) => room_assignments)
-      .flat(1)
-      .reduce((a, b) => {
-        if (!Array.isArray(a[b.room])) {
-          a[b.room] = [];
-        }
-        a[b.room].push(b);
-        return a;
-      }, {});
+    const rooms = roomsDict(state);
+    const bookings = bookingsMap(state);
+    const guests = guestsMap(state);
 
-    const bookings = new Map(
-      state.bookings.data.map(({ room_assignments: _, ...booking }) => [
-        booking.id,
-        booking,
-      ])
-    );
-
-    const guests = new Map(state.guests.data.map((guest) => [guest.id, guest]));
+    const clearGuestQuery = () => {
+      setGuestQuery("");
+    };
 
     return (
-      <RoomStatusTable rooms={rooms} guests={guests} bookings={bookings} />
+      <>
+        {guestQuery && (
+          <div className="filter-guest">
+            <span className="tag">{guests.get(guestQuery).name}</span>
+            <span className="tag" onClick={clearGuestQuery}>
+              ✖
+            </span>
+          </div>
+        )}
+        {!guestQuery && (
+          <div className="filter-date">
+            <label>
+              <span>Bookings from: &nbsp;</span>
+              <input
+                type="datetime-local"
+                value={dateQuery.from}
+                onChange={({ target: { value: from } }) => {
+                  setDateQuery({ ...dateQuery, from });
+                }}
+              />
+            </label>
+
+            <label>
+              <span>Booking to: &nbsp;</span>
+              <input
+                type="datetime-local"
+                value={dateQuery.to}
+                onChange={({ target: { value: to } }) =>
+                  setDateQuery({ ...dateQuery, to })
+                }
+              />
+            </label>
+          </div>
+        )}
+        <RoomStatusTable
+          rooms={rooms}
+          guests={guests}
+          bookings={bookings}
+          onSelectGuest={setGuestQuery}
+          selectedGuestId={guestQuery}
+        />
+      </>
     );
   } else return null;
 };
