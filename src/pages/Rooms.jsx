@@ -1,8 +1,30 @@
 import React, { useContext, useLayoutEffect, useState } from "react";
 import { Error as ShowError } from "../components/Error";
-import { loadRooms } from "../model/actions";
+import { loadRooms, loadDues } from "../model/actions";
 import { guestsMap, bookingsMap, roomsDict } from "../model/selectors";
 import { AppModel, allRooms } from "../model";
+
+const GuestsCol = ({ room, guests, onSelectGuest, bookings }) => (
+  <td>
+    {room?.map((booking) => {
+      const guest = guests.get(bookings.get(booking.booking_id).guest_id);
+      const checkIn = new Date(booking.checkin_at);
+      const checkOut = new Date(booking.checkout_at);
+      return (
+        <span
+          className="tag"
+          key={booking.id}
+          onClick={() => {
+            onSelectGuest(guest.id);
+          }}
+          title={`${checkIn.toLocaleDateString()}, ${checkIn.toLocaleTimeString()} -> ${checkOut.toLocaleDateString()}, ${checkOut.toLocaleTimeString()}`}
+        >
+          {guest.name}
+        </span>
+      );
+    }) ?? null}
+  </td>
+);
 
 const RoomStatusTable = ({
   rooms = {},
@@ -26,26 +48,27 @@ const RoomStatusTable = ({
               <span className="tag">{room}</span>
             </td>
             {selectedGuestId ? (
-              <td>--</td>
-            ) : (
               <td>
-                {rooms[room]?.map((booking) => {
-                  const guest = guests.get(
-                    bookings.get(booking.booking_id).guest_id
-                  );
-                  return (
-                    <span
-                      className="tag"
-                      key={booking.id}
-                      onClick={() => {
-                        onSelectGuest(guest.id);
-                      }}
-                    >
-                      {guest.name}
+                {rooms[room]
+                  ?.filter(({ booking_id }) => {
+                    return (
+                      bookings.get(booking_id).guest_id === selectedGuestId
+                    );
+                  })
+                  .map(({ id }) => (
+                    <span key={id} className="tag">
+                      B-id/{id}/due/
+                      {bookings.get(id).amountDue.toFixed(2)}
                     </span>
-                  );
-                }) ?? null}
+                  ))}
               </td>
+            ) : (
+              <GuestsCol
+                guests={guests}
+                room={rooms[room]}
+                onSelectGuest={onSelectGuest}
+                bookings={bookings}
+              />
             )}
           </tr>
         ))}
@@ -64,20 +87,65 @@ export const Rooms = () => {
 
   useLayoutEffect(() => {
     loadRooms(dispatch);
+    loadDues(dispatch);
   }, []);
 
-  const error = state.bookings.error || state.guests.error;
-  const loading = state.bookings.loading || state.guests.loading;
+  const error =
+    state.bookings.error ||
+    state.guests.error ||
+    state.invoices.error ||
+    state.payments.error;
+  const loading =
+    state.bookings.loading ||
+    state.guests.loading ||
+    state.invoices.loading ||
+    state.payments.loading;
 
   if (loading) return null;
   if (error) return <ShowError error={error} />;
   if (state.bookings.data.length && state.guests.data.length) {
-    const rooms = roomsDict(state);
+    let rooms = roomsDict(state);
+    if (dateQuery.to || dateQuery.from) {
+      for (const room in rooms) {
+        let bkngs = rooms[room].filter(({ checkout_at }) => {
+          const from = dateQuery.from ? Date.parse(dateQuery.from) : null;
+          const to = dateQuery.to ? Date.parse(dateQuery.to) : null;
+          const checkOut = Date.parse(checkout_at);
+          if (from && to) {
+            return checkOut >= to || checkOut >= from;
+          } else if (to) {
+            return checkOut >= to;
+          } else {
+            return checkOut >= from;
+          }
+        });
+        rooms[room] = bkngs;
+      }
+    }
     const bookings = bookingsMap(state);
     const guests = guestsMap(state);
 
     const clearGuestQuery = () => {
       setGuestQuery("");
+      const from = sessionStorage.getItem("_d_from") || "";
+      const to = sessionStorage.getItem("_d_to") || "";
+      if (from || to) {
+        setDateQuery({ from, to });
+        sessionStorage.clear();
+      }
+    };
+
+    const clearDateQuery = () => {
+      setDateQuery({ from: "", to: "" });
+    };
+
+    const selectGuest = (id) => {
+      setGuestQuery(id);
+      if (dateQuery.to || dateQuery.from) {
+        sessionStorage.setItem("_d_from", dateQuery.from || "");
+        sessionStorage.setItem("_d_to", dateQuery.to || "");
+        clearDateQuery();
+      }
     };
 
     return (
@@ -113,13 +181,19 @@ export const Rooms = () => {
                 }
               />
             </label>
+
+            {(dateQuery.to || dateQuery.from) && (
+              <div className="tag" onClick={clearDateQuery}>
+                all bookings
+              </div>
+            )}
           </div>
         )}
         <RoomStatusTable
           rooms={rooms}
           guests={guests}
           bookings={bookings}
-          onSelectGuest={setGuestQuery}
+          onSelectGuest={selectGuest}
           selectedGuestId={guestQuery}
         />
       </>

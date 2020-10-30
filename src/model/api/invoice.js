@@ -2,6 +2,6 @@ import { baseGet } from "./base";
 
 const base = baseGet("invoices");
 
-export const listGuests = () => base();
+export const listInvoices = () => base();
 
-export const showGuest = (id) => base(id);
+export const showInvoice = (id) => base(id);

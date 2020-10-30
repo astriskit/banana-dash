@@ -9,7 +9,14 @@ import {
   KEY_INVOICEABLE,
   KEY_PAYMENT,
 } from "./reducer";
-import { listBookings, listGuests, showBooking } from "./api";
+import {
+  listBookings,
+  listGuests,
+  showBooking,
+  listInvoices,
+  showInvoice,
+  listPayments,
+} from "./api";
 
 const genAction = (type, payload = null) => ({ type, payload });
 
@@ -57,13 +64,35 @@ export const loadRooms = async (dispatch) => {
     const { data: guests } = await listGuests();
     dispatch(setGuestData(guests));
   } catch (error) {
-    error.config.url.includes("bookings")
+    error?.config?.url.includes("bookings")
       ? dispatch(setBookingToLoadError(error))
       : dispatch(setBookingData([]));
-    error.config.url.includes("guests")
+    error?.config?.url.includes("guests")
       ? dispatch(setGuestToLoadError(error))
       : dispatch(setGuestData([]));
   }
 };
 
-export const loadDues = async (dispatch) => {};
+export const loadDues = async (dispatch) => {
+  try {
+    dispatch(setInvoiceToLoad());
+    let { data: invoices } = await listInvoices();
+    const points = await Promise.all(invoices.map(({ id }) => showInvoice(id)));
+    invoices = invoices.map((inv) => {
+      const point =
+        points.find(({ data: { id } }) => inv.id === id)?.data ?? {};
+      return { ...inv, ...point };
+    });
+    dispatch(setInvoiceData(invoices));
+    dispatch(setPaymentToLoad());
+    const { data: payments } = await listPayments();
+    dispatch(setPaymentData(payments));
+  } catch (error) {
+    error.config.url.includes("invoices")
+      ? dispatch(setInvoiceToLoadError(error))
+      : dispatch(setInvoiceData([]));
+    error.config.url.includes("payments")
+      ? dispatch(setPaymentToLoadError(error))
+      : dispatch(setPaymentData([]));
+  }
+};
