@@ -1,3 +1,11 @@
+## About
+
+This project was done as a part of an interview. Key points - 
+
+- Showing information which relies on many api-points; Opportunities to have data-cached, central data-store on client-side;
+- Single page application based on reactjs;
+- Context-based client-side react store;
+
 ## Instructions to run locally -
 
 - Clone/copy the project; Unzip if it is zipped source-code;
